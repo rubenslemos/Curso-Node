@@ -30,15 +30,16 @@ app.post("/account", (request, response) => {
   const {name, cpf} = request.body
   const customersAlreadyExists = customers.some(
     (customers) => customers.cpf === cpf
-  )
-  if (customersAlreadyExists){
-    return response.status(400).json({error: "Customers already exists!"})
-  }
+    )
+    if (customersAlreadyExists){
+      return response.status(400).json({error: "Customers already exists!"})
+    }
   customers.push({
     id: uuidv4(),
     name,
     cpf,
-    statement: []
+    statement: [],
+    saldo: 0
   })
   return response.status(201).json({Contas: customers}).send()
   
@@ -67,7 +68,9 @@ app.post("/deposit", (request, response) => {
     type: "credit"
   }
   customer.statement.push(statementOperation)
-  return response.status(201).json([customer.statement]).send()
+  const balance = getBalance(customer.statement)
+  customer.saldo = balance
+  return response.status(201).json({Extrato: customer.statement, saldo: customer.saldo}).send()
 })
 
 app.post("/withdraw", (request, response) => {
@@ -82,8 +85,9 @@ app.post("/withdraw", (request, response) => {
     created_at : new Date(),
     type: "debit"
   }
+  customer.saldo = balance - amount
   customer.statement.push(statementOperation)
-  return response.status(201).json([customer.statement]).send()
+  return response.status(201).json({Extrato: customer.statement, saldo: customer.saldo}).send()
 })
 
 app.get("/statement/date", (request, response) => {
